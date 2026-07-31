@@ -1,0 +1,27 @@
+# --- Web framework -----------------------------------------------------
+fastapi>=0.115,<0.116
+uvicorn[standard]>=0.32,<0.33
+python-multipart>=0.0.9
+
+# --- Validation / settings ----------------------------------------------
+pydantic>=2.9,<3
+pydantic-settings>=2.5,<3
+
+# --- PDF parsing ----------------------------------------------------------
+PyMuPDF>=1.24
+
+# --- NLP / ML (pretrained inference only -- nothing is trained) --------
+spacy>=3.7,<3.9
+sentence-transformers>=3.0
+gliner>=0.2.10
+torch>=2.2
+
+# --- Numerical / ML utilities --------------------------------------------
+# numpy is pinned below 2.0 for compatibility with the pinned versions of
+# spaCy / sentence-transformers / torch above.
+numpy>=1.26,<2.0
+scikit-learn>=1.4
+
+# --- Testing ---------------------------------------------------------------
+pytest>=8.0
+httpx>=0.27
