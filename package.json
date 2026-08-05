@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:ml": "cd resume-analysis && uvicorn app.main:app --reload --port 8000",
+    "dev:all": "concurrently --names next,ml --prefix-colors blue,magenta \"npm run dev\" \"npm run dev:ml\"",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -36,6 +38,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^10.0.4",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "tailwindcss": "^4",

@@ -1,3 +1,4 @@
+/*
 import { GoogleGenAI } from "@google/genai";
 import { env } from "@/lib/core/env";
 import { AiGeminiResponse, AiGeminiResponseSchema } from "@/lib/types/ai";
@@ -70,3 +71,11 @@ Do not include markdown code blocks, just raw JSON.
     }, "Gemini Analysis");
   }
 }
+
+*/
+
+import { GoogleGenAI } from "@google/genai";
+
+export const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY!,
+});

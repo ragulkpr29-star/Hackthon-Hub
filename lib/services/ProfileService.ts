@@ -3,9 +3,20 @@ import { StorageService } from '../storage/StorageService';
 import type { ProfileFormData } from '../schemas/profile.schema';
 import type { SkillCategory } from '../types';
 import type {
-  ResumeAnalysisApiResponse,
   ResumeAnalysisResult,
 } from '../types/resume-analysis';
+
+/**
+ * Result returned by completeOnboarding().
+ * `success` indicates whether the profile was saved.
+ * `resumeAnalysisFailed` is set when resume analysis was attempted but failed —
+ * the caller should show a non-blocking warning to the user.
+ */
+export interface OnboardingResult {
+  success: boolean;
+  resumeAnalysisFailed?: boolean;
+  resumeAnalysisError?: string;
+}
 
 export class ProfileService {
   private repository = new ProfileRepository();
@@ -20,7 +31,7 @@ export class ProfileService {
     data: ProfileFormData,
     avatarFile?: File,
     resumeFile?: File
-  ) {
+  ): Promise<OnboardingResult> {
     // ── 1. Upload avatar (optional) ─────────────────────────────────────────
     let avatar_url: string | undefined;
     if (avatarFile) {
@@ -41,13 +52,22 @@ export class ProfileService {
 
     // ── 3. Send resume to FastAPI for analysis ──────────────────────────────
     let analysisResult: ResumeAnalysisResult | null = null;
+    let resumeAnalysisFailed = false;
+    let resumeAnalysisError: string | undefined;
 
     if (resumeFile) {
       try {
         analysisResult = await this._analyzeResume(resumeFile);
-      } catch (err) {
-        // Non-fatal: log and continue so onboarding always completes
-        console.warn('[ProfileService] Resume analysis failed (non-fatal):', err);
+        if (!analysisResult) {
+          // Service returned success: false (e.g. scanned PDF)
+          resumeAnalysisFailed = true;
+          resumeAnalysisError =
+            'Resume analysis returned no results. The PDF may be scanned/image-based.';
+        }
+      } catch (err: any) {
+        resumeAnalysisFailed = true;
+        resumeAnalysisError =
+          err?.message || 'Resume analysis service is unavailable.';
       }
     }
 
@@ -97,8 +117,11 @@ export class ProfileService {
     if (success && analysisResult) {
       try {
         await this._upsertSkillScores(userId, analysisResult);
-      } catch (err) {
-        console.warn('[ProfileService] Skill-score upsert failed (non-fatal):', err);
+      } catch (err: any) {
+        // Skill-score upsert failing shouldn't block onboarding
+        resumeAnalysisFailed = true;
+        resumeAnalysisError =
+          resumeAnalysisError || 'Failed to save skill scores from resume analysis.';
       }
     }
 
@@ -107,7 +130,13 @@ export class ProfileService {
       await this.repository.getProfile(userId);
     }
 
-    return success;
+    return {
+      success,
+      ...(resumeAnalysisFailed && {
+        resumeAnalysisFailed,
+        resumeAnalysisError,
+      }),
+    };
   }
 
   // ── Private helpers ─────────────────────────────────────────────────────────
@@ -120,29 +149,33 @@ export class ProfileService {
     const form = new FormData();
     form.append("resume", file);
 
-    console.log("========== SENDING TO FASTAPI ==========");
-
     const response = await fetch("/api/v1/analyze-resume", {
       method: "POST",
       body: form,
     });
 
-    console.log("HTTP Status:", response.status);
-
     const json = await response.json();
 
-    console.log("========== FASTAPI RESPONSE ==========");
-    console.log(JSON.stringify(json, null, 2));
+    if (!response.ok) {
+      throw new Error(json.message || `Resume analysis failed (HTTP ${response.status})`);
+    }
 
     if (!json.success) {
-      console.error("Resume analysis failed");
       return null;
     }
 
-    console.log("========== ANALYSIS ==========");
-    console.log(json.analysis);
-
     return json.analysis;
+  }
+
+  /**
+   * Build skill_score rows from the analysis and upsert them.
+   * This is also used by the re-analysis flow on the profile page.
+   */
+  async upsertSkillScoresFromAnalysis(
+    userId: string,
+    analysis: ResumeAnalysisResult
+  ): Promise<void> {
+    return this._upsertSkillScores(userId, analysis);
   }
 
   /**

@@ -24,10 +24,10 @@ export default function OnboardingPage() {
   const { completeProfile, loading: saving, error: saveError } = useProfile();
 
   const [mounted, setMounted] = useState(false);
-  
+
   const [avatarFile, setAvatarFile] = useState<File | undefined>();
   const [resumeFile, setResumeFile] = useState<File | undefined>();
-  
+
   const [formData, setFormData] = useState<Partial<ProfileFormData>>({
     bio: '',
     availability_status: 'looking_for_team',
@@ -92,7 +92,7 @@ export default function OnboardingPage() {
 
     // Zod Validation
     const validationResult = profileSchema.safeParse(formData);
-    
+
     if (!validationResult.success) {
       const fieldErrors: Record<string, string> = {};
       validationResult.error.issues.forEach(err => {
@@ -104,6 +104,30 @@ export default function OnboardingPage() {
       // Scroll to top to see error summary if needed
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
+    }
+
+    // Analyze GitHub Profile
+    console.log("STEP 1: Starting GitHub Analysis");
+    if (validationResult.data.github_url) {
+      console.log("STEP 2: GitHub URL =", validationResult.data.github_url);
+      const response = await fetch("/api/github/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          githubUrl: validationResult.data.github_url,
+        }),
+      });
+
+      const githubAnalysis = await response.json();
+
+      if (!githubAnalysis.success) {
+        alert("GitHub Analysis Failed");
+        return;
+      }
+
+      console.log("GitHub Analysis:", githubAnalysis);
     }
 
     const success = await completeProfile(
@@ -121,7 +145,7 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto space-y-8">
-        
+
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">Complete Your Profile</h1>
           <p className="text-muted-foreground">
@@ -136,14 +160,14 @@ export default function OnboardingPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          
+
           <Card className="glass-card border-border/50 rounded-2xl overflow-hidden">
             <CardHeader className="bg-muted/30 border-b border-border/50">
               <CardTitle>Profile Picture</CardTitle>
               <CardDescription>Upload a professional photo or avatar</CardDescription>
             </CardHeader>
             <CardContent className="p-6">
-              <ProfilePhotoUploader 
+              <ProfilePhotoUploader
                 initialImage={profile.avatar_url || undefined}
                 onFileSelect={setAvatarFile}
                 name={profile.name}
@@ -177,7 +201,7 @@ export default function OnboardingPage() {
 
               <div className="space-y-2">
                 <Label>Bio</Label>
-                <Textarea 
+                <Textarea
                   placeholder="Tell us a little bit about yourself, your goals, and what you're passionate about building."
                   className={`rounded-xl resize-none h-24 ${errors.bio ? 'border-destructive' : ''}`}
                   value={formData.bio || ''}
@@ -190,7 +214,7 @@ export default function OnboardingPage() {
                 </div>
               </div>
 
-              <AvailabilitySelector 
+              <AvailabilitySelector
                 value={formData.availability_status || 'looking_for_team'}
                 onChange={(val) => handleUpdate('availability_status', val)}
               />
@@ -203,8 +227,8 @@ export default function OnboardingPage() {
               <CardDescription>Add skills by typing and pressing Enter or comma</CardDescription>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
-              
-              <SkillsSelector 
+
+              <SkillsSelector
                 label="Technical Interests"
                 placeholder="e.g. Artificial Intelligence, Web Development..."
                 value={formData.technical_interests || []}
@@ -212,7 +236,7 @@ export default function OnboardingPage() {
                 suggestions={['Artificial Intelligence', 'Machine Learning', 'Cyber Security', 'Web Development', 'Cloud Computing']}
               />
 
-              <SkillsSelector 
+              <SkillsSelector
                 label="Programming Languages"
                 placeholder="e.g. JavaScript, Python, C++..."
                 value={formData.programming_languages || []}
@@ -220,7 +244,7 @@ export default function OnboardingPage() {
                 suggestions={['Python', 'Java', 'C++', 'JavaScript', 'TypeScript']}
               />
 
-              <SkillsSelector 
+              <SkillsSelector
                 label="Frameworks"
                 placeholder="e.g. React, Next.js, Django..."
                 value={formData.frameworks || []}
@@ -228,7 +252,7 @@ export default function OnboardingPage() {
                 suggestions={['React', 'Next.js', 'Express', 'Flutter', 'Django']}
               />
 
-              <SkillsSelector 
+              <SkillsSelector
                 label="Tools & Technologies"
                 placeholder="e.g. Git, Docker, Figma..."
                 value={formData.tools || []}
@@ -244,8 +268,8 @@ export default function OnboardingPage() {
               <CardTitle>Social Links & Resume</CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-8">
-              
-              <SocialLinksForm 
+
+              <SocialLinksForm
                 githubUrl={formData.github_url || ''}
                 onGithubUrlChange={(val) => handleUpdate('github_url', val)}
                 portfolioUrl={formData.portfolio_url || ''}
@@ -256,7 +280,7 @@ export default function OnboardingPage() {
 
               <div className="space-y-3">
                 <Label className="text-sm font-medium">Resume (Optional)</Label>
-                <ResumeUploader 
+                <ResumeUploader
                   onFileSelect={setResumeFile}
                   initialResumeUrl={profile.resume_url}
                 />
@@ -281,9 +305,9 @@ export default function OnboardingPage() {
                   <span className="text-muted-foreground">Ready to start?</span>
                 )}
               </div>
-              <Button 
-                type="submit" 
-                size="lg" 
+              <Button
+                type="submit"
+                size="lg"
                 disabled={saving}
                 className="rounded-xl gradient-primary text-white shadow-lg shadow-primary/25 border-0 font-semibold px-8"
               >

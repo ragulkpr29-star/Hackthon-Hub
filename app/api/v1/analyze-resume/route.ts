@@ -39,10 +39,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     const text = await response.text();
 
-    console.log("========== FASTAPI RESPONSE ==========");
-    console.log(text);
-    console.log("======================================");
-
     try {
       const json = JSON.parse(text);
 
@@ -53,35 +49,43 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       }
 
       return NextResponse.json(json);
-    } catch (err) {
-      console.error("FastAPI did not return JSON.");
-      console.error(text);
-
+    } catch {
       return NextResponse.json(
         {
           success: false,
-          message: "FastAPI returned invalid JSON",
-          raw: text,
+          message: 'Resume analysis service returned invalid JSON.',
         },
-        {
-          status: 500,
-        }
+        { status: 500 }
       );
     }
   } catch (err: any) {
-    console.error('[/api/v1/analyze-resume] Upstream call failed:', err);
-
     if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
       return NextResponse.json(
-        { success: false, message: 'Resume analysis service timed out.' },
+        { success: false, message: 'Resume analysis service timed out (60 s limit).' },
         { status: 504 }
+      );
+    }
+
+    // fetch() throws TypeError on network errors (ECONNREFUSED, DNS failure, etc.)
+    const isNetworkError =
+      err instanceof TypeError || err?.cause?.code === 'ECONNREFUSED';
+
+    if (isNetworkError) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            `Resume analysis service is not reachable at ${FASTAPI_BASE_URL}. ` +
+            'Start it with: npm run dev:ml',
+        },
+        { status: 503 }
       );
     }
 
     return NextResponse.json(
       {
         success: false,
-        message: 'Failed to reach the resume analysis service. It may not be running.',
+        message: 'An unexpected error occurred while contacting the resume analysis service.',
       },
       { status: 503 }
     );
