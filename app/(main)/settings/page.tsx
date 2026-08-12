@@ -31,10 +31,10 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  
+
   const { profile, user } = useAuth();
   const supabase = createClient();
-  
+
   // State for password change
   const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -47,7 +47,7 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setLoading(true);
     setErrorMsg('');
-    
+
     // Only attempt password change if a new password is provided
     if (newPassword) {
       if (newPassword.length < 6) {
@@ -55,17 +55,17 @@ export default function SettingsPage() {
         setLoading(false);
         return;
       }
-      
+
       const { error } = await supabase.auth.updateUser({
         password: newPassword
       });
-      
+
       if (error) {
         setErrorMsg(error.message);
         setLoading(false);
         return;
       }
-      
+
       // Clear password fields on success
       setPassword('');
       setNewPassword('');
@@ -77,11 +77,11 @@ export default function SettingsPage() {
   };
 
   if (!profile) {
-     return (
-        <div className="flex h-screen items-center justify-center">
-           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-     );
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
   return (
@@ -140,12 +140,12 @@ export default function SettingsPage() {
                 )}
                 <div className="space-y-2">
                   <Label>New Password</Label>
-                  <Input 
-                    type="password" 
-                    placeholder="••••••••" 
+                  <Input
+                    type="password"
+                    placeholder="••••••••"
                     className="rounded-xl"
                     value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)} 
+                    onChange={(e) => setNewPassword(e.target.value)}
                   />
                 </div>
               </CardContent>
@@ -159,21 +159,21 @@ export default function SettingsPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-3 gap-4">
-                  <button 
+                  <button
                     onClick={() => setTheme('light')}
                     className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${theme === 'light' ? 'border-primary bg-primary/5' : 'border-border/50 hover:border-primary/30'}`}
                   >
                     <Sun className="h-6 w-6 mb-2" />
                     <span className="text-sm font-medium">Light</span>
                   </button>
-                  <button 
+                  <button
                     onClick={() => setTheme('dark')}
                     className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${theme === 'dark' ? 'border-primary bg-primary/5' : 'border-border/50 hover:border-primary/30'}`}
                   >
                     <Moon className="h-6 w-6 mb-2" />
                     <span className="text-sm font-medium">Dark</span>
                   </button>
-                  <button 
+                  <button
                     onClick={() => setTheme('system')}
                     className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${theme === 'system' ? 'border-primary bg-primary/5' : 'border-border/50 hover:border-primary/30'}`}
                   >
@@ -221,10 +221,10 @@ export default function SettingsPage() {
                   <p className="text-sm text-muted-foreground mb-4">Control who can see your profile details and skills.</p>
                   <div className="space-y-2">
                     <label className="flex items-center gap-3 p-3 border border-border/50 rounded-xl cursor-pointer hover:bg-muted/50 transition-colors">
-                      <input 
-                        type="radio" 
-                        name="visibility" 
-                        value="public" 
+                      <input
+                        type="radio"
+                        name="visibility"
+                        value="public"
                         checked={profileVisibility === 'public'}
                         onChange={(e) => setProfileVisibility(e.target.value)}
                         className="text-primary focus:ring-primary h-4 w-4"
@@ -235,10 +235,10 @@ export default function SettingsPage() {
                       </div>
                     </label>
                     <label className="flex items-center gap-3 p-3 border border-border/50 rounded-xl cursor-pointer hover:bg-muted/50 transition-colors">
-                      <input 
-                        type="radio" 
-                        name="visibility" 
-                        value="connections" 
+                      <input
+                        type="radio"
+                        name="visibility"
+                        value="connections"
                         checked={profileVisibility === 'connections'}
                         onChange={(e) => setProfileVisibility(e.target.value)}
                         className="text-primary focus:ring-primary h-4 w-4"
@@ -255,12 +255,11 @@ export default function SettingsPage() {
           </TabsContent>
 
           <div className="mt-6 flex justify-end">
-            <Button 
-              onClick={handleSave} 
+            <Button
+              onClick={handleSave}
               disabled={loading || success}
-              className={`rounded-xl h-11 px-8 font-semibold text-white transition-all ${
-                success ? 'bg-green-500 hover:bg-green-600' : 'gradient-primary hover:opacity-90'
-              }`}
+              className={`rounded-xl h-11 px-8 font-semibold text-white transition-all ${success ? 'bg-green-500 hover:bg-green-600' : 'gradient-primary hover:opacity-90'
+                }`}
             >
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

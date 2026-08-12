@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/hooks/use-auth';
-import { useProfile } from '@/hooks/useProfile';
 import { ProfilePhotoUploader } from '@/components/onboarding/ProfilePhotoUploader';
 import { ResumeUploader } from '@/components/onboarding/ResumeUploader';
 import { SkillsSelector } from '@/components/onboarding/SkillsSelector';
@@ -16,22 +15,28 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle2, ChevronRight } from 'lucide-react';
+import { Loader2, ChevronRight } from 'lucide-react';
+import { StorageService } from '@/lib/storage/StorageService';
+import { AnalysisLoadingOverlay } from '@/components/onboarding/AnalysisLoadingOverlay';
 
 export default function OnboardingPage() {
   const router = useRouter();
   const { user, profile, loading: authLoading } = useAuth();
-  const { completeProfile, loading: saving, error: saveError } = useProfile();
 
   const [mounted, setMounted] = useState(false);
-
   const [avatarFile, setAvatarFile] = useState<File | undefined>();
   const [resumeFile, setResumeFile] = useState<File | undefined>();
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Analysis overlay state
+  const [jobId, setJobId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<Partial<ProfileFormData>>({
     bio: '',
     availability_status: 'looking_for_team',
     github_url: '',
+    linkedin_url: '',
     portfolio_url: '',
     technical_interests: [],
     programming_languages: [],
@@ -56,7 +61,9 @@ export default function OnboardingPage() {
           ...prev,
           bio: profile.bio || '',
           availability_status: profile.availability_status || 'looking_for_team',
+
           github_url: profile.github_url || '',
+          linkedin_url: profile.linkedin_url || '',
           portfolio_url: profile.portfolio_url || '',
           technical_interests: profile.technical_interests || [],
           programming_languages: profile.programming_languages || [],
@@ -89,10 +96,10 @@ export default function OnboardingPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
+    setSaveError(null);
 
-    // Zod Validation
+    // Step 1: Zod validation
     const validationResult = profileSchema.safeParse(formData);
-
     if (!validationResult.success) {
       const fieldErrors: Record<string, string> = {};
       validationResult.error.issues.forEach(err => {
@@ -101,49 +108,83 @@ export default function OnboardingPage() {
         }
       });
       setErrors(fieldErrors);
-      // Scroll to top to see error summary if needed
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
-    // Analyze GitHub Profile
-    console.log("STEP 1: Starting GitHub Analysis");
-    if (validationResult.data.github_url) {
-      console.log("STEP 2: GitHub URL =", validationResult.data.github_url);
-      const response = await fetch("/api/github/analyze", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+    setIsSaving(true);
+
+    try {
+      const storage = new StorageService();
+
+      // Step 2: Upload avatar (browser-side, direct to Supabase Storage)
+      let avatarUrl: string | null = profile.avatar_url || null;
+      if (avatarFile) {
+        const ext = avatarFile.name.split('.').pop() || 'jpg';
+        const path = `${profile.id}/avatar-${Date.now()}.${ext}`;
+        const uploaded = await storage.uploadFile('avatars', path, avatarFile);
+        if (uploaded) avatarUrl = uploaded;
+      }
+
+      // Step 3: Upload resume (browser-side, direct to Supabase Storage)
+      let resumeUrl: string | null = profile.resume_url || null;
+      if (resumeFile) {
+        const path = `${profile.id}/resume-${Date.now()}.pdf`;
+        const uploaded = await storage.uploadFile('resumes', path, resumeFile);
+        if (uploaded) resumeUrl = uploaded;
+      }
+
+      // Step 4: POST /api/onboarding — backend does everything
+      const response = await fetch('/api/onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          githubUrl: validationResult.data.github_url,
+          ...validationResult.data,
+          avatar_url: avatarUrl,
+          resume_url: resumeUrl,
         }),
       });
 
-      const githubAnalysis = await response.json();
+      const result = await response.json();
 
-      if (!githubAnalysis.success) {
-        alert("GitHub Analysis Failed");
-        return;
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to save profile');
       }
 
-      console.log("GitHub Analysis:", githubAnalysis);
+      // Step 5: Show analysis overlay — it polls until the job completes
+      setJobId(result.jobId);
+    } catch (err: any) {
+      setSaveError(err.message || 'Something went wrong. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
+  };
 
-    const success = await completeProfile(
-      profile.id,
-      validationResult.data,
-      avatarFile,
-      resumeFile
-    );
+  // When analysis is complete → redirect home
+  const handleAnalysisComplete = () => {
+    router.push('/home');
+  };
 
-    if (success) {
-      router.push('/home');
-    }
+  const handleAnalysisError = (msg: string) => {
+    // Don't block the user — they can still go home even if analysis failed
+    setSaveError(`Analysis encountered an issue: ${msg}. You can still access your dashboard.`);
+    setJobId(null);
+    // Redirect after 3 seconds
+    setTimeout(() => router.push('/home'), 3000);
   };
 
   return (
     <div className="min-h-screen bg-background text-foreground py-10 px-4 sm:px-6 lg:px-8">
+
+      {/* Analysis Loading Overlay — shown after job is created */}
+      {jobId && (
+        <AnalysisLoadingOverlay
+          jobId={jobId}
+          onComplete={handleAnalysisComplete}
+          onError={handleAnalysisError}
+        />
+      )}
+
       <div className="max-w-3xl mx-auto space-y-8">
 
         <div className="text-center space-y-2">
@@ -227,7 +268,6 @@ export default function OnboardingPage() {
               <CardDescription>Add skills by typing and pressing Enter or comma</CardDescription>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
-
               <SkillsSelector
                 label="Technical Interests"
                 placeholder="e.g. Artificial Intelligence, Web Development..."
@@ -235,7 +275,6 @@ export default function OnboardingPage() {
                 onChange={(val) => handleUpdate('technical_interests', val)}
                 suggestions={['Artificial Intelligence', 'Machine Learning', 'Cyber Security', 'Web Development', 'Cloud Computing']}
               />
-
               <SkillsSelector
                 label="Programming Languages"
                 placeholder="e.g. JavaScript, Python, C++..."
@@ -243,7 +282,6 @@ export default function OnboardingPage() {
                 onChange={(val) => handleUpdate('programming_languages', val)}
                 suggestions={['Python', 'Java', 'C++', 'JavaScript', 'TypeScript']}
               />
-
               <SkillsSelector
                 label="Frameworks"
                 placeholder="e.g. React, Next.js, Django..."
@@ -251,7 +289,6 @@ export default function OnboardingPage() {
                 onChange={(val) => handleUpdate('frameworks', val)}
                 suggestions={['React', 'Next.js', 'Express', 'Flutter', 'Django']}
               />
-
               <SkillsSelector
                 label="Tools & Technologies"
                 placeholder="e.g. Git, Docker, Figma..."
@@ -259,7 +296,6 @@ export default function OnboardingPage() {
                 onChange={(val) => handleUpdate('tools', val)}
                 suggestions={['Git', 'Docker', 'Figma', 'Firebase', 'Supabase']}
               />
-
             </CardContent>
           </Card>
 
@@ -268,16 +304,20 @@ export default function OnboardingPage() {
               <CardTitle>Social Links & Resume</CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-8">
-
               <SocialLinksForm
                 githubUrl={formData.github_url || ''}
                 onGithubUrlChange={(val) => handleUpdate('github_url', val)}
+
+                linkedinUrl={formData.linkedin_url || ''}
+                onLinkedinUrlChange={(val) => handleUpdate('linkedin_url', val)}
+
                 portfolioUrl={formData.portfolio_url || ''}
                 onPortfolioUrlChange={(val) => handleUpdate('portfolio_url', val)}
+
                 githubError={errors.github_url}
+                linkedinError={errors.linkedin_url}
                 portfolioError={errors.portfolio_url}
               />
-
               <div className="space-y-3">
                 <Label className="text-sm font-medium">Resume (Optional)</Label>
                 <ResumeUploader
@@ -285,7 +325,6 @@ export default function OnboardingPage() {
                   initialResumeUrl={profile.resume_url}
                 />
               </div>
-
             </CardContent>
           </Card>
 
@@ -308,10 +347,10 @@ export default function OnboardingPage() {
               <Button
                 type="submit"
                 size="lg"
-                disabled={saving}
+                disabled={isSaving}
                 className="rounded-xl gradient-primary text-white shadow-lg shadow-primary/25 border-0 font-semibold px-8"
               >
-                {saving ? (
+                {isSaving ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Saving...

@@ -52,6 +52,8 @@ export const GithubAnalysisSchema = z.object({
   languages_json: z.record(z.string(), z.any()),
   frameworks_json: z.record(z.string(), z.any()),
   topics_json: z.record(z.string(), z.any()),
+  raw_json: z.record(z.string(), z.any()).nullable().optional(),
+  repo_hash: z.string().nullable().optional(),
   created_at: z.string(),
   updated_at: z.string(),
 });
@@ -61,6 +63,8 @@ export type GithubAnalysis = z.infer<typeof GithubAnalysisSchema>;
 export const AiAnalysisSchema = z.object({
   id: z.string().uuid(),
   user_id: z.string().uuid(),
+  professional_summary: z.string().nullable().optional(),
+  experience_level: z.string().nullable().optional(),
   overall_score: z.number(),
   frontend_score: z.number(),
   backend_score: z.number(),
@@ -82,3 +86,32 @@ export const AiAnalysisSchema = z.object({
 });
 
 export type AiAnalysis = z.infer<typeof AiAnalysisSchema>;
+
+// ============================================================
+// Developer Vector — full AI-generated skill vector
+// Used for team formation queries without re-calling AI
+// ============================================================
+export const DeveloperVectorSchema = z.object({
+  id: z.string().uuid(),
+  user_id: z.string().uuid(),
+  frontend_score: z.number().min(0).max(100),
+  backend_score: z.number().min(0).max(100),
+  database_score: z.number().min(0).max(100),
+  cloud_score: z.number().min(0).max(100),
+  ai_score: z.number().min(0).max(100),
+  mobile_score: z.number().min(0).max(100),
+  problem_solving_score: z.number().min(0).max(100),
+  leadership_score: z.number().min(0).max(100),
+  overall_score: z.number().min(0).max(100),
+  recommended_role: z.string().nullable().optional(),
+  experience_level: z.string().nullable().optional(),
+  professional_summary: z.string().nullable().optional(),
+  project_complexity: z.string().nullable().optional(),
+  confidence: z.number().min(0).max(100).nullable().optional(),
+  prompt_version: z.string().default("v1"),
+  analyzed_at: z.string().nullable().optional(),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+
+export type DeveloperVector = z.infer<typeof DeveloperVectorSchema>;

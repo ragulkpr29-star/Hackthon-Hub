@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/hooks/use-auth';
 import { CreatePost } from '@/components/feed/create-post';
 import { PostCard } from '@/components/feed/post-card';
 import { EmptyState } from '@/components/shared/empty-state';
+import { AiProfileCard } from '@/components/home/AiProfileCard';
 import type { Post } from '@/lib/types';
 
 export default function HomePage() {
@@ -115,13 +116,7 @@ export default function HomePage() {
 
       {/* Right Sidebar */}
       <aside className="hidden lg:block lg:col-span-4 space-y-4">
-        <div className="glass-card rounded-2xl p-5 border border-border/50">
-          <h3 className="text-sm font-semibold mb-3">About Hackathon Hub</h3>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            The AI-powered collaboration platform for Kongu Engineering College students.
-            Discover teammates, verify skills, and build winning projects.
-          </p>
-        </div>
+        <AiProfileCard />
       </aside>
     </div>
   );

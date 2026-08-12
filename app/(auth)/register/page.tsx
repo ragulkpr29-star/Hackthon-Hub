@@ -151,8 +151,8 @@ export default function RegisterPage() {
             <div key={s} className="flex items-center gap-2">
               <div
                 className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold transition-all ${step >= s
-                    ? 'gradient-primary text-white'
-                    : 'bg-muted text-muted-foreground'
+                  ? 'gradient-primary text-white'
+                  : 'bg-muted text-muted-foreground'
                   }`}
               >
                 {s}

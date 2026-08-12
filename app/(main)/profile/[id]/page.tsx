@@ -2,6 +2,7 @@
 
 import { useState, useEffect, use, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from "next/navigation";
 import {
   MapPin,
   Calendar,
@@ -41,6 +42,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   const [connectionStatus, setConnectionStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
+  const router = useRouter();
 
   const currentUserId = user?.id || null;
   const isOwnProfile = currentUserId === id;
@@ -178,7 +180,11 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
             <div className="flex gap-2 mt-4">
               {isOwnProfile ? (
-                <Button variant="outline" className="rounded-xl gap-2">
+                <Button
+                  variant="outline"
+                  className="rounded-xl gap-2"
+                  onClick={() => router.push("/settings")}
+                >
                   <Edit3 className="h-4 w-4" />
                   Edit Profile
                 </Button>

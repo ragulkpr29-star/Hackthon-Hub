@@ -56,6 +56,12 @@ const envSchema = z.object({
   GEMINI_API_KEY: z.string().optional(),
 
   GOOGLE_VISION_API_KEY: z.string().optional(),
+
+  OPENROUTER_API_KEY: z.string().optional(),
+
+  OPENROUTER_MODEL: z.string().default("deepseek/deepseek-chat"),
+
+  RESUME_ANALYSIS_URL: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse({
@@ -69,6 +75,12 @@ const parsed = envSchema.safeParse({
   GEMINI_API_KEY: process.env.GEMINI_API_KEY,
 
   GOOGLE_VISION_API_KEY: process.env.GOOGLE_VISION_API_KEY,
+
+  OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
+
+  OPENROUTER_MODEL: process.env.OPENROUTER_MODEL,
+
+  RESUME_ANALYSIS_URL: process.env.RESUME_ANALYSIS_URL,
 });
 
 if (!parsed.success) {

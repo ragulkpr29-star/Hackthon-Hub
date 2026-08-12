@@ -4,21 +4,31 @@ import { Profile } from "@/lib/types/models";
 import { Logger } from "@/lib/core/logger";
 
 export class OnboardingService {
-  static async startOnboarding(userId: string, profileData: Partial<Profile>): Promise<string> {
+
+  static async startOnboarding(
+    userId: string,
+    profileData: Partial<Profile>
+  ): Promise<string> {
+
     Logger.info(`Starting onboarding for user ${userId}`);
 
-    // 1. Create Profile
-    await UserRepository.createProfile({
-      id: userId,
-      ...profileData,
-    });
+    // Update existing profile
+    await UserRepository.updateProfile(
+      userId,
+      {
+        ...profileData,
+        updated_at: new Date().toISOString(),
+      }
+    );
 
-    // 2. Create Analysis Job
+    // Create analysis job
     const job = await JobRepository.createJob(userId);
 
-    Logger.info(`Onboarding initialized for user ${userId}, Job ID: ${job.id}`);
-    
-    // Return jobId so the API route can return it immediately
+    Logger.info(
+      `Onboarding initialized for user ${userId}, Job ID: ${job.id}`
+    );
+
     return job.id;
   }
+
 }

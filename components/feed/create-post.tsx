@@ -105,11 +105,10 @@ export function CreatePost({ onPostCreated }: CreatePostProps) {
                       <Badge
                         key={type.value}
                         variant={selectedType === type.value ? 'default' : 'outline'}
-                        className={`cursor-pointer rounded-full px-3 py-1 text-xs transition-all ${
-                          selectedType === type.value
+                        className={`cursor-pointer rounded-full px-3 py-1 text-xs transition-all ${selectedType === type.value
                             ? 'gradient-primary text-white border-0'
                             : 'hover:bg-accent'
-                        }`}
+                          }`}
                         onClick={() => setSelectedType(type.value)}
                       >
                         {type.label}

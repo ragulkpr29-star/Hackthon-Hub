@@ -99,7 +99,7 @@ export default function NotificationsPage() {
 
   const markAllAsRead = async () => {
     if (!user) return;
-    
+
     // Optimistic update
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
 
@@ -159,17 +159,15 @@ export default function NotificationsPage() {
                 transition={{ delay: index * 0.03 }}
               >
                 <Card
-                  className={`glass-card border-border/50 rounded-2xl cursor-pointer transition-all hover:shadow-md ${
-                    !notif.is_read ? 'ring-1 ring-primary/20 bg-primary/[0.03]' : ''
-                  }`}
+                  className={`glass-card border-border/50 rounded-2xl cursor-pointer transition-all hover:shadow-md ${!notif.is_read ? 'ring-1 ring-primary/20 bg-primary/[0.03]' : ''
+                    }`}
                   onClick={() => {
                     if (!notif.is_read) markAsRead(notif.id);
                   }}
                 >
                   <CardContent className="p-4 flex items-start gap-3">
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl shrink-0 ${
-                      !notif.is_read ? 'bg-primary/10' : 'bg-muted'
-                    }`}>
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl shrink-0 ${!notif.is_read ? 'bg-primary/10' : 'bg-muted'
+                      }`}>
                       <Icon className={`h-5 w-5 ${!notif.is_read ? 'text-primary' : 'text-muted-foreground'}`} />
                     </div>
                     <div className="flex-1 min-w-0">

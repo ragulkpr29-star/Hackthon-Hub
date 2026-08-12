@@ -24,6 +24,12 @@ export class GeminiApiError extends BaseError {
   }
 }
 
+export class OpenRouterApiError extends BaseError {
+  constructor(message: string, statusCode: number = 500, context?: Record<string, any>) {
+    super(message, statusCode, context);
+  }
+}
+
 export class DatabaseError extends BaseError {
   constructor(message: string, context?: Record<string, any>) {
     super(message, 500, context);
