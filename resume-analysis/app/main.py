@@ -5,6 +5,7 @@ Wires together configuration, ML model loading (exactly once, at
 startup), dependency injection, the single public endpoint, and
 centralized exception handling.
 """
+
 from __future__ import annotations
 
 from contextlib import asynccontextmanager

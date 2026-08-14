@@ -68,12 +68,10 @@ export async function POST(req: NextRequest) {
 
     // ── Start onboarding pipeline ─────────────────────────────────────────
     const jobId = await OnboardingService.startOnboarding(userId, {
-      bio: profileData.bio ?? undefined,
+      ...profileData,
       github_url: githubUrl ?? undefined,
-      linkedin_url: profileData.linkedin_url ?? undefined,
+      linkedin_url: linkedinUrl ?? undefined,
       resume_url: profileData.resume_url ?? undefined,
-      // Note: avatar_url, portfolio_url, interests etc. go in the upsert
-      // via the profileData spread — ensure the Profile type supports them
     });
 
     // ── Fire-and-forget background processing ────────────────────────────

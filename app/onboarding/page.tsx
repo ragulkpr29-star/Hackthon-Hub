@@ -74,10 +74,42 @@ export default function OnboardingPage() {
     }
   }, [user, profile, authLoading, router]);
 
-  if (!mounted || authLoading || !profile) {
+  if (!mounted || authLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  if (!profile) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-6">
+        <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-xl">
+          <h1 className="text-2xl font-bold">
+            Profile setup required
+          </h1>
+
+          <p className="mt-3 text-sm text-muted-foreground">
+            Your account is authenticated, but your Hackathon Hub profile
+            has not been created yet.
+          </p>
+
+          <p className="mt-2 text-xs text-muted-foreground">
+            Please go back to registration and complete your account setup.
+          </p>
+
+          <Button
+            className="mt-6 rounded-xl"
+            onClick={() => router.push('/register')}
+          >
+            Go to Registration
+          </Button>
+        </div>
       </div>
     );
   }
