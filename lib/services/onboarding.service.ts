@@ -1,6 +1,6 @@
 import { UserRepository } from "@/lib/repositories/user.repository";
 import { JobRepository } from "@/lib/repositories/job.repository";
-import { Profile } from "@/lib/types/models";
+import { Profile } from "@/lib/types";
 import { Logger } from "@/lib/core/logger";
 
 export class OnboardingService {
@@ -12,14 +12,12 @@ export class OnboardingService {
 
     Logger.info(`Starting onboarding for user ${userId}`);
 
-    // Update existing profile
-    await UserRepository.updateProfile(
-      userId,
-      {
-        ...profileData,
-        updated_at: new Date().toISOString(),
-      }
-    );
+    // Upsert profile (creates if it doesn't exist, updates if it does)
+    await UserRepository.upsertProfile({
+      id: userId,
+      ...profileData,
+      updated_at: new Date().toISOString(),
+    });
 
     // Create analysis job
     const job = await JobRepository.createJob(userId);

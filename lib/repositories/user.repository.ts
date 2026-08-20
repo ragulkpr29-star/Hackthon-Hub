@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { Profile } from "@/lib/types/models";
+import { Profile } from "@/lib/types";
 import { DatabaseError } from "@/lib/core/errors";
 import { Logger } from "@/lib/core/logger";
 

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { OnboardingService } from "@/lib/services/onboarding.service";
 import { Logger } from "@/lib/core/logger";
+import { Profile } from "@/lib/types";
 
 // ============================================================
 // Onboarding request schema — matches ProfileFormData from
@@ -11,6 +12,10 @@ import { Logger } from "@/lib/core/logger";
 // ============================================================
 const OnboardingRequestSchema = z.object({
   // Profile fields
+  name: z.string().optional().nullable(),
+  student_id: z.string().optional().nullable(),
+  department: z.string().optional().nullable(),
+  year: z.union([z.string(), z.number()]).optional().nullable(),
   bio: z.string().optional().nullable(),
   github_url: z
     .string()
@@ -22,7 +27,7 @@ const OnboardingRequestSchema = z.object({
     .min(1, "linkedin url is mandatory")
     .url("Must be a valid LinkedIn URL"),
   portfolio_url: z.string().url().optional().nullable().or(z.literal("")),
-  availability_status: z.string().optional().nullable(),
+  availability_status: z.enum(["looking_for_team", "available", "busy", "in_team"]).optional().nullable(),
   technical_interests: z.array(z.string()).optional().default([]),
   programming_languages: z.array(z.string()).optional().default([]),
   frameworks: z.array(z.string()).optional().default([]),
@@ -67,13 +72,40 @@ export async function POST(req: NextRequest) {
     const githubUrl = profileData.github_url || null;
     const linkedinUrl = profileData.linkedin_url || null;
 
+    // ── Merge fields with user_metadata ────────────────────────────────────
+    const name = profileData.name || user.user_metadata?.name;
+    const student_id = profileData.student_id || user.user_metadata?.student_id;
+    const department = profileData.department || user.user_metadata?.department;
+    const yearRaw = profileData.year || user.user_metadata?.year;
+    
+    // Convert year to number safely
+    const year = yearRaw ? Number(yearRaw) : undefined;
+
+    if (!student_id) {
+        return NextResponse.json(
+          { error: "Validation failed: student_id is required" },
+          { status: 400 }
+        );
+    }
+
     // ── Start onboarding pipeline ─────────────────────────────────────────
-    const jobId = await OnboardingService.startOnboarding(userId, {
+    const payload: Partial<Profile> = {
       ...profileData,
-      github_url: githubUrl ?? undefined,
-      linkedin_url: linkedinUrl ?? undefined,
-      resume_url: profileData.resume_url ?? undefined,
-    });
+      email: user.email,
+      name,
+      student_id,
+      department,
+      year,
+      availability_status: profileData.availability_status || "looking_for_team",
+      github_url: githubUrl ?? null,
+      linkedin_url: linkedinUrl ?? null,
+      resume_url: profileData.resume_url ?? null,
+      portfolio_url: profileData.portfolio_url ?? null,
+      avatar_url: profileData.avatar_url ?? null,
+      bio: profileData.bio ?? null,
+    };
+
+    const jobId = await OnboardingService.startOnboarding(userId, payload);
 
     // ── Fire-and-forget background processing ────────────────────────────
     const baseUrl = req.nextUrl.origin;
