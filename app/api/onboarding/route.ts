@@ -14,12 +14,13 @@ const OnboardingRequestSchema = z.object({
   bio: z.string().optional().nullable(),
   github_url: z
     .string()
+    .min(1, "github url is mandatory")
     .url("Must be a valid URL")
-    .refine((u) => u.includes("github.com"), "Must be a GitHub URL")
-    .optional()
-    .nullable()
-    .or(z.literal("")),
-  linkedin_url: z.string().url().optional().nullable().or(z.literal("")),
+    .refine((u) => u.includes("github.com"), "Must be a GitHub URL"),
+  linkedin_url: z
+    .string()
+    .min(1, "linkedin url is mandatory")
+    .url("Must be a valid LinkedIn URL"),
   portfolio_url: z.string().url().optional().nullable().or(z.literal("")),
   availability_status: z.string().optional().nullable(),
   technical_interests: z.array(z.string()).optional().default([]),

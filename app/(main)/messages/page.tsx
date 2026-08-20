@@ -22,28 +22,29 @@ export default function MessagesPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sendingMessage, setSendingMessage] = useState(false);
-  
+
   const { user } = useAuth();
   const supabase = createClient();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const fetchConversations = useCallback(async () => {
     if (!user) return;
-    
+
     // Fetch conversations the user is part of
     const { data: participantsData, error: partError } = await supabase
       .from('conversation_participants')
       .select('conversation_id')
       .eq('user_id', user.id);
-      
+
     if (partError || !participantsData || participantsData.length === 0) {
       setConversations([]);
       setLoading(false);
       return;
     }
 
-    const convoIds = participantsData.map(p => p.conversation_id);
-
+    const convoIds = participantsData.map(
+      (p: { conversation_id: string }) => p.conversation_id
+    );
     // Fetch conversation details with all participants
     const { data: convosData, error: convosError } = await supabase
       .from('conversations')
@@ -115,7 +116,7 @@ export default function MessagesPage() {
       // Scroll to bottom
       setTimeout(() => {
         if (scrollRef.current) {
-           scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
       }, 100);
     }
@@ -124,7 +125,7 @@ export default function MessagesPage() {
 
   useEffect(() => {
     fetchMessages();
-    
+
     if (!selectedConvoId) return;
 
     // Realtime subscription for new messages in this conversation
@@ -138,28 +139,38 @@ export default function MessagesPage() {
           table: 'messages',
           filter: `conversation_id=eq.${selectedConvoId}`
         },
-        async (payload) => {
+        async (payload: {
+          new: {
+            id: string;
+            conversation_id: string;
+            sender_id: string;
+            content: string;
+            message_type: string;
+            created_at: string;
+            [key: string]: unknown;
+          };
+        }) => {
           // Fetch sender details for the new message
           const { data: senderData } = await supabase
             .from('profiles')
             .select('id, name, avatar_url')
             .eq('id', payload.new.sender_id)
             .single();
-            
+
           const newMsg = {
             ...payload.new,
             sender: senderData
           } as Message;
-          
+
           setMessages(prev => [...prev, newMsg]);
-          
+
           // Scroll to bottom
           setTimeout(() => {
             if (scrollRef.current) {
               scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
             }
           }, 100);
-          
+
           // Update last message in conversation list
           fetchConversations();
         }
@@ -176,7 +187,7 @@ export default function MessagesPage() {
     if (!newMessage.trim() || !user || !selectedConvoId) return;
 
     setSendingMessage(true);
-    
+
     const { error } = await supabase
       .from('messages')
       .insert({
@@ -200,13 +211,13 @@ export default function MessagesPage() {
     const otherParticipants = convo.participants?.filter((p) => p.id !== user?.id) || [];
     return otherParticipants.map((p) => p.name).join(', ') || 'Unknown';
   };
-  
+
   const getConvoAvatar = (convo: Conversation) => {
-     const otherParticipants = convo.participants?.filter((p) => p.id !== user?.id) || [];
-     if (otherParticipants.length === 1 && otherParticipants[0].avatar_url) {
-        return otherParticipants[0].avatar_url;
-     }
-     return undefined;
+    const otherParticipants = convo.participants?.filter((p) => p.id !== user?.id) || [];
+    if (otherParticipants.length === 1 && otherParticipants[0].avatar_url) {
+      return otherParticipants[0].avatar_url;
+    }
+    return undefined;
   }
 
   if (loading) {
@@ -238,11 +249,10 @@ export default function MessagesPage() {
                   <button
                     key={convo.id}
                     onClick={() => setSelectedConvoId(convo.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all text-left ${
-                      selectedConvoId === convo.id
-                        ? 'bg-primary/10 ring-1 ring-primary/20'
-                        : 'hover:bg-accent'
-                    }`}
+                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all text-left ${selectedConvoId === convo.id
+                      ? 'bg-primary/10 ring-1 ring-primary/20'
+                      : 'hover:bg-accent'
+                      }`}
                   >
                     <Avatar className="h-10 w-10 shrink-0">
                       <AvatarImage src={getConvoAvatar(convo)} />
@@ -283,11 +293,11 @@ export default function MessagesPage() {
           ) : (
             <>
               {loadingMessages ? (
-                 <div className="flex-1 flex items-center justify-center">
-                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                 </div>
+                <div className="flex-1 flex items-center justify-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
               ) : (
-                 <ScrollArea className="flex-1 p-4" ref={scrollRef as any}>
+                <ScrollArea className="flex-1 p-4" ref={scrollRef as any}>
                   <div className="space-y-3 pb-2">
                     {messages.map((msg) => {
                       const isOwn = msg.sender_id === user?.id;
@@ -308,11 +318,10 @@ export default function MessagesPage() {
                               </Avatar>
                             )}
                             <div
-                              className={`rounded-2xl px-4 py-2.5 text-sm break-words ${
-                                isOwn
-                                  ? 'gradient-primary text-white rounded-br-md'
-                                  : 'bg-muted rounded-bl-md'
-                              }`}
+                              className={`rounded-2xl px-4 py-2.5 text-sm break-words ${isOwn
+                                ? 'gradient-primary text-white rounded-br-md'
+                                : 'bg-muted rounded-bl-md'
+                                }`}
                             >
                               {msg.content}
                             </div>

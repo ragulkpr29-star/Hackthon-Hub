@@ -37,7 +37,7 @@ export function SocialLinksForm({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label className="text-sm font-medium">GitHub Profile URL</Label>
+        <Label className="text-sm font-medium">GitHub Profile URL <span className="text-red-500">*</span></Label>
         <div className="relative flex items-center">
           <Code2 className="absolute left-3 h-4 w-4 text-muted-foreground" />
           <Input
@@ -53,7 +53,7 @@ export function SocialLinksForm({
 
 
       <div className="space-y-2">
-        <Label className="text-sm font-medium">LinkedIn Profile URL</Label>
+        <Label className="text-sm font-medium">LinkedIn Profile URL <span className="text-red-500">*</span></Label>
 
         <div className="relative flex items-center">
           <Globe className="absolute left-3 h-4 w-4 text-muted-foreground" />

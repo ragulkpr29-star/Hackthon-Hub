@@ -18,6 +18,7 @@ export interface Profile {
   frameworks: string[];
   tools: string[];
   github_url: string | null;
+  linkedin_url: string | null;
   portfolio_url: string | null;
   resume_url: string | null;
   availability_status: 'available' | 'busy' | 'in_team' | 'looking_for_team';

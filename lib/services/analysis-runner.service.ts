@@ -209,7 +209,7 @@ export class AnalysisRunnerService {
         recent_activity_score: 0,
       },
       languages: {},
-      frameworks: {},
+      frameworks: [],
       topics: {},
       projects: [],
       readme: null,

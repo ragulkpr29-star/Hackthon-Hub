@@ -11,6 +11,10 @@
 !.yarn/releases
 !.yarn/versions
 
+
+
+*.zip
+
 # testing
 /coverage
 
